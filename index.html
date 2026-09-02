@@ -229,6 +229,7 @@ function renderActiveGridLayer() {
                 // If user clicks a voxel on the grid, automatically jump UI to Draw Mode highlight
                 if (currentAppMode !== 'D') {
                     highlightModeButton('D');
+                    sendSingleCommandChar('D');
                 }
                 
                 if ((cubeMatrixData[byteIndex] & (1 << x)) !== 0) {
@@ -325,6 +326,13 @@ function highlightModeButton(mode) {
     if (mode === 'D') document.getElementById('modeDBtn').classList.add('btn-active');
 }
 
+function handleModeFeedback(event) {
+    const mode = String.fromCharCode(event.target.value.getUint8(0));
+    if (mode === 'A' || mode === 'M' || mode === 'D') {
+        highlightModeButton(mode);
+    }
+}
+
 // --- CORE INTERFACE ATTACHMENTS ---
 connectBtn.onclick = async () => {
     // If already connected, toggle disconnect
@@ -357,8 +365,16 @@ connectBtn.onclick = async () => {
         const service = await server.getPrimaryService(HM10_SERVICE_UUID);
         bleCharacteristic = await service.getCharacteristic(HM10_CHAR_UUID);
 
+        if (bleCharacteristic.properties.notify) {
+            await bleCharacteristic.startNotifications();
+            bleCharacteristic.addEventListener('characteristicvaluechanged', handleModeFeedback);
+        }
+
         updateStatus('Status: Connected', 'var(--accent)');
         connectBtn.innerText = 'Disconnect';
+
+        // Select the web app's default mode after the Bluetooth connection is ready.
+        sendSingleCommandChar('A');
 
         bleDevice.addEventListener('gattserverdisconnected', () => {
             updateStatus('Status: Disconnected', 'var(--danger)');
@@ -367,8 +383,6 @@ connectBtn.onclick = async () => {
             bleDevice = null;
         });
 
-        // Synchronize current mode immediately upon connection
-        sendSingleCommandChar(currentAppMode);
     } catch (error) {
         const name = error && error.name ? error.name : 'Error';
         const msg = error && error.message ? error.message : '';
