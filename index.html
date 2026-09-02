@@ -182,6 +182,21 @@ let cubeMatrixData = new Uint8Array(64);
 const gridContainer = document.getElementById('voxelGrid');
 const tabsContainer = document.getElementById('layerTabs');
 const statusLabel = document.getElementById('statusLabel');
+const connectBtn = document.getElementById('connectBtn');
+
+function updateStatus(text, colorVar) {
+    statusLabel.innerText = text;
+    if (colorVar) {
+        statusLabel.style.color = colorVar;
+    }
+    console.log(text);
+}
+
+// Warn early if not secure context
+if (!window.isSecureContext) {
+    updateStatus('Status: Insecure context — Web Bluetooth requires HTTPS or localhost', 'var(--danger)');
+    // Keep the button available but show warning; many users will host on GitHub Pages (https) which is secure.
+}
 
 // Generate structural tab selection buttons
 for (let z = 0; z < 8; z++) {
@@ -216,14 +231,13 @@ function renderActiveGridLayer() {
                     highlightModeButton('D');
                 }
                 
-                if (isVoxelActive) {
+                if ((cubeMatrixData[byteIndex] & (1 << x)) !== 0) {
                     cubeMatrixData[byteIndex] &= ~(1 << x);
                     voxel.classList.remove('active');
                 } else {
                     cubeMatrixData[byteIndex] |= (1 << x);
                     voxel.classList.add('active');
                 }
-                isVoxelActive = !isVoxelActive;
                 streamFullMatrixFrame(); 
             };
             gridContainer.appendChild(voxel);
@@ -234,20 +248,45 @@ function renderActiveGridLayer() {
 // --- SAFE MTU SEGMENTATION WRITE LOOP ---
 let transmitQueue = Promise.resolve();
 
-function transmitRawPayload(buffer) {
-    const payload = new Uint8Array(buffer);
+async function transmitRawPayload(buffer) {
+    // Accept ArrayBuffer or Uint8Array
+    const payload = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
     transmitQueue = transmitQueue.then(async () => {
-        if (!bleCharacteristic) return;
+        if (!bleCharacteristic) {
+            console.warn('No BLE characteristic — dropping payload');
+            return;
+        }
 
         try {
             const CHUNK_SIZE = 16;
             for (let i = 0; i < payload.byteLength; i += CHUNK_SIZE) {
                 const chunk = payload.slice(i, i + CHUNK_SIZE);
-                await bleCharacteristic.writeValue(chunk);
+                try {
+                    // Prefer writeWithoutResponse when available for faster writes
+                    if (bleCharacteristic.writeValueWithoutResponse) {
+                        await bleCharacteristic.writeValueWithoutResponse(chunk);
+                    } else if (bleCharacteristic.writeValue) {
+                        await bleCharacteristic.writeValue(chunk);
+                    } else {
+                        // fallback to buffer form
+                        await bleCharacteristic.writeValue(chunk.buffer);
+                    }
+                } catch (writeErr) {
+                    // one more fallback attempt using ArrayBuffer
+                    try {
+                        await bleCharacteristic.writeValue(chunk.buffer);
+                    } catch (finalErr) {
+                        console.error('Write failed for chunk', finalErr);
+                        throw finalErr;
+                    }
+                }
+
+                // small pacing delay to avoid overflowing HM-10
                 await new Promise(resolve => setTimeout(resolve, 20));
             }
         } catch (err) {
-            console.error("Transmission chunk segment dropped: ", err);
+            console.error('Transmission chunk segment dropped: ', err);
+            updateStatus('Status: Transmission error', 'var(--danger)');
         }
     });
 
@@ -271,7 +310,7 @@ function streamFullMatrixFrame() {
 // Sends isolated standalone command character pulses
 function sendSingleCommandChar(char) {
     let buffer = new Uint8Array([char.charCodeAt(0)]);
-    transmitRawPayload(buffer.buffer);
+    transmitRawPayload(buffer);
 }
 
 // Utility to handle button visual highlights
@@ -287,36 +326,65 @@ function highlightModeButton(mode) {
 }
 
 // --- CORE INTERFACE ATTACHMENTS ---
-document.getElementById('connectBtn').onclick = async () => {
+connectBtn.onclick = async () => {
+    // If already connected, toggle disconnect
     try {
-        statusLabel.innerText = "Status: Scanning Devices...";
+        if (bleDevice && bleDevice.gatt && bleDevice.gatt.connected) {
+            bleDevice.gatt.disconnect();
+            updateStatus('Status: Disconnected', 'var(--danger)');
+            connectBtn.innerText = 'Connect Cube';
+            connectBtn.disabled = false;
+            return;
+        }
+
+        if (!navigator.bluetooth) {
+            updateStatus('Status: Web Bluetooth not supported in this browser', 'var(--danger)');
+            return;
+        }
+
+        updateStatus('Status: Scanning Devices...', 'var(--muted)');
+
+        // For debugging and broad compatibility, use acceptAllDevices: true and request the HM-10 service as optional
+        // Once your device is discovered you can tighten filters (name, namePrefix, service) if needed.
         bleDevice = await navigator.bluetooth.requestDevice({
-            filters: [{ services: [HM10_SERVICE_UUID] }]
+            acceptAllDevices: true,
+            optionalServices: [HM10_SERVICE_UUID]
+            // If you want to restrict by name: filters: [{ namePrefix: 'HM' }], optionalServices: [HM10_SERVICE_UUID]
         });
-        
-        statusLabel.innerText = "Status: Connecting Pins...";
+
+        updateStatus('Status: Connecting...', 'var(--muted)');
         const server = await bleDevice.gatt.connect();
         const service = await server.getPrimaryService(HM10_SERVICE_UUID);
         bleCharacteristic = await service.getCharacteristic(HM10_CHAR_UUID);
-        
-        statusLabel.innerText = "Status: Connected Perfectly";
-        statusLabel.style.color = "var(--accent)";
-        
+
+        updateStatus('Status: Connected', 'var(--accent)');
+        connectBtn.innerText = 'Disconnect';
+
+        bleDevice.addEventListener('gattserverdisconnected', () => {
+            updateStatus('Status: Disconnected', 'var(--danger)');
+            connectBtn.innerText = 'Connect Cube';
+            bleCharacteristic = null;
+            bleDevice = null;
+        });
+
         // Synchronize current mode immediately upon connection
         sendSingleCommandChar(currentAppMode);
     } catch (error) {
-        statusLabel.innerText = "Status: Pairing Failed";
-        statusLabel.style.color = "var(--danger)";
+        const name = error && error.name ? error.name : 'Error';
+        const msg = error && error.message ? error.message : '';
+        updateStatus('Status: Pairing Failed — ' + name + (msg ? ': ' + msg : ''), 'var(--danger)');
         console.error(error);
+        if (error && error.name === 'NotFoundError') {
+            console.warn('Device not found — try power-cycling the HM-10, unpairing it from the OS, or use acceptAllDevices:true');
+        }
     }
 };
 
 document.getElementById('clearBtn').onclick = () => {
     cubeMatrixData.fill(0);
     renderActiveGridLayer();
-    if (currentAppMode === 'D') {
-        streamFullMatrixFrame();
-    }
+    // Always stream cleared frame when connected to keep hardware in sync
+    if (bleCharacteristic) streamFullMatrixFrame();
 };
 
 // Clean command triggers
@@ -356,8 +424,11 @@ document.getElementById('brightSlider').oninput = (event) => {
 
     // ASCII 'B' header followed by the raw brightness value.
     const packet = new Uint8Array([66, value]);
-    transmitRawPayload(packet.buffer);
+    transmitRawPayload(packet);
 };
 
 // Initial canvas deployment
 renderActiveGridLayer();
+</script>
+</body>
+</html>
