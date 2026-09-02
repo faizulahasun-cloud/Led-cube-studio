@@ -1,44 +1,387 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>8x8x8 LED Cube Studio Pro</title>
-  <style>
-    :root{--bg:#0b0b0f;--panel:#121217;--text:#f3f3f3;--muted:#9aa0a6;--accent:#00ff66}
-    html,body{height:100%;margin:0;font-family:Segoe UI, Roboto, Arial, sans-serif;background:linear-gradient(180deg,var(--bg),#050506);color:var(--text)}
-    .wrap{max-width:920px;margin:40px auto;padding:28px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:12px;box-shadow:0 6px 30px rgba(0,0,0,0.6)}
-    h1{margin:0 0 8px;font-size:28px}
-    p{margin:8px 0;color:var(--muted)}
-    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:18px}
-    .card{background:var(--panel);padding:14px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
-    a.btn{display:inline-block;padding:8px 12px;border-radius:6px;background:linear-gradient(90deg,var(--accent),#00d15a);color:#020202;text-decoration:none;font-weight:600}
-    footer{margin-top:18px;color:var(--muted);font-size:13px}
-    .embed{width:100%;height:520px;border:0;border-radius:8px;background:#000;margin-top:12px}
-    @media(max-width:520px){.embed{height:380px}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8x8x8 LED Cube Studio Pro</title>
+<style>
+:root { 
+    --bg: #141414; 
+    --panel: #222222; 
+    --panel2: #1a1a1a; 
+    --line: #3a3a3a; 
+    --text: #f5f5f5; 
+    --muted: #aaaaaa; 
+    --accent: #00ff66; 
+    --accent-dim: #063d22; 
+    --danger: #ff4545; 
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: var(--bg); 
+    color: var(--text); 
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    letter-spacing: 1px;
+    color: var(--accent);
+}
+.app-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+@media (max-width: 900px) {
+    .app-container { grid-template-columns: 1fr; }
+}
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.connection-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--danger);
+    display: inline-block;
+}
+.status-dot.connected {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+}
+button {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    padding: 10px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+button:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+}
+button.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+}
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.layer-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.layer-selector {
+    display: flex;
+    gap: 5px;
+    justify-content: space-between;
+    background: var(--panel2);
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+}
+.layer-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+.grid-8x8 {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    background: var(--panel2);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    aspect-ratio: 1;
+}
+.voxel {
+    aspect-ratio: 1;
+    background: #333;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.voxel.on {
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+}
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.slider-container label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--muted);
+}
+input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    height: 6px;
+    border-radius: 3px;
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>8x8x8 LED Cube Studio Pro</h1>
-    <p>This site was updated to provide a working GitHub Pages landing page. The original app file (LED_CUBE_STUDIO_FINAL_Version2.html) is still in the repository — it's embedded below so you can inspect it. If you previously saw only the page title, that happened because the repository file had placeholders and missing inline assets (CSS/JS) which left only the heading visible.</p>
+<h1>8x8x8 LED Cube Studio Pro</h1>
 
-    <div class="cards">
-      <div class="card">
-        <strong>What I changed</strong>
-        <p>Replaced index.html with a self-contained landing page so Pages serves a complete page with styling and an embedded view of the original HTML file.</p>
-      </div>
-      <div class="card">
-        <strong>Next steps you can take</strong>
-        <p>Edit LED_CUBE_STUDIO_FINAL_Version2.html to restore the full CSS/JS app, or paste your working build files into a docs/ folder and set Pages to serve from there.</p>
-      </div>
+<div class="app-container">
+    <!-- Left Configuration Panel -->
+    <div class="panel">
+        <h2>Hardware Connectivity</h2>
+        <div class="connection-bar">
+            <div id="statusDot" class="status-dot"></div>
+            <span id="statusText" style="color: var(--muted)">Disconnected</span>
+            <button id="connectBtn" style="margin-left: auto;">Connect Cube (HM-10)</button>
+        </div>
+        
+        <h2>Global Commands</h2>
+        <div class="control-grid">
+            <button id="btnAuto" class="active">Auto Mode (A)</button>
+            <button id="btnManual">Manual Mode (M)</button>
+            <button id="btnPrev">Previous Mode (P)</button>
+            <button id="btnNext">Next Mode (N)</button>
+        </div>
+
+        <div class="slider-container">
+            <label><span>Global Brightness (B)</span><span id="brightVal">8</span></label>
+            <input type="range" id="brightSlider" min="2" max="8" value="8">
+        </div>
+        
+        <button id="btnClear" style="border-color: var(--danger); color: var(--danger);">Clear Draw Canvas</button>
     </div>
 
-    <p style="margin-top:18px"><a class="btn" href="/faizulahasun-cloud/Led-cube-studio/blob/main/LED_CUBE_STUDIO_FINAL_Version2.html" target="_blank">Open source file on GitHub</a></p>
+    <!-- Right Live Grid Drawer Panel -->
+    <div class="panel">
+        <div class="layer-container">
+            <label style="font-weight: bold; color: var(--muted)">Active Drawer Layer (Z-Axis View)</label>
+            <div class="layer-selector">
+                <button class="layer-btn active" data-z="0">Z0</button>
+                <button class="layer-btn" data-z="1">Z1</button>
+                <button class="layer-btn" data-z="2">Z2</button>
+                <button class="layer-btn" data-z="3">Z3</button>
+                <button class="layer-btn" data-z="4">Z4</button>
+                <button class="layer-btn" data-z="5">Z5</button>
+                <button class="layer-btn" data-z="6">Z6</button>
+                <button class="layer-btn" data-z="7">Z7</button>
+            </div>
+        </div>
+        
+        <div id="gridCanvas" class="grid-8x8"></div>
+    </div>
+</div>
 
-    <iframe class="embed" src="LED_CUBE_STUDIO_FINAL_Version2.html" title="Embedded LED Cube Studio file"></iframe>
+<script>
+// --- HM-10 Factory Default Constants ---
+const HM10_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+const HM10_CHAR_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
 
-    <footer>Published to GitHub Pages — check the live site at: https://faizulahasun-cloud.github.io/Led-cube-studio/</footer>
-  </div>
+let bleDevice = null;
+let bleCharacteristic = null;
+let bleWriteChain = Promise.resolve();
+
+// --- Local State Memory Buffer (64 Bytes matching packed structure) ---
+let cubeData = new Uint8Array(64);
+let currentZ = 0;
+
+// --- Initialize Interactive DOM Objects ---
+const connectBtn = document.getElementById('connectBtn');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const gridCanvas = document.getElementById('gridCanvas');
+const brightSlider = document.getElementById('brightSlider');
+const brightVal = document.getElementById('brightVal');
+
+const btnAuto = document.getElementById('btnAuto');
+const btnManual = document.getElementById('btnManual');
+const btnPrev = document.getElementById('btnPrev');
+const btnNext = document.getElementById('btnNext');
+const btnClear = document.getElementById('btnClear');
+
+// Generate 8x8 Grid Squares
+function buildGridUI() {
+    gridCanvas.innerHTML = '';
+    for(let y=0; y<8; y++) {
+        for(let x=0; x<8; x++) {
+            const el = document.createElement('div');
+            el.className = 'voxel';
+            el.dataset.x = x;
+            el.dataset.y = y;
+            el.addEventListener('click', onVoxelClick);
+            gridCanvas.appendChild(el);
+        }
+    }
+    updateGridUI();
+}
+
+function updateGridUI() {
+    const voxels = gridCanvas.querySelectorAll('.voxel');
+    voxels.forEach(el => {
+        const x = parseInt(el.dataset.x);
+        const y = parseInt(el.dataset.y);
+        const byteIndex = (currentZ * 8) + y;
+        const bitState = (cubeData[byteIndex] & (1 << x)) !== 0;
+        if(bitState) {
+            el.classList.add('on');
+        } else {
+            el.classList.remove('on');
+        }
+    });
+}
+
+function onVoxelClick(e) {
+    const x = parseInt(e.target.dataset.x);
+    const y = parseInt(e.target.dataset.y);
+    const byteIndex = (currentZ * 8) + y;
+    
+    // Toggle targeted matrix bit
+    cubeData[byteIndex] ^= (1 << x);
+    updateGridUI();
+    
+    // Auto-transmit the changed matrix state to Arduino Uno
+    streamFullFrame();
+}
+
+// --- Send Serial Commands over BLE ---
+function sendTxPacket(buffer) {
+    if (!bleCharacteristic) return;
+    bleWriteChain = bleWriteChain.then(() => 
+        bleCharacteristic.writeValueWithoutResponse(buffer)
+    ).catch(err => console.log('Packet transmission dropped:', err));
+}
+
+function sendTextCommand(charStr) {
+    const buf = new TextEncoder().encode(charStr);
+    sendTxPacket(buf);
+}
+
+function streamFullFrame() {
+    // Exact structural format expected by your Arduino: 'S' + 64 data bytes + Checksum
+    const packet = new Uint8Array(66);
+    packet[0] = 'S'.charCodeAt(0);
+    
+    let checksum = 0;
+    for(let i=0; i<64; i++) {
+        packet[i+1] = cubeData[i];
+        checksum ^= cubeData[i];
+    }
+    packet[65] = checksum;
+    
+    // HM-10 max safe packet payload is typically 20 bytes. Split into 4 safe chunks.
+    const chunkSize = 16;
+    for (let offset = 0; offset < packet.length; offset += chunkSize) {
+        const chunk = packet.slice(offset, offset + chunkSize);
+        sendTxPacket(chunk);
+    }
+}
+
+// --- Event UI Listeners ---
+connectBtn.addEventListener('click', async () => {
+    if (bleDevice && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+        return;
+    }
+    try {
+        statusText.textContent = "Searching...";
+        bleDevice = await navigator.bluetooth.requestDevice({
+            filters: [{ services: [HM10_SERVICE_UUID.toLowerCase()] }, { namePrefix: 'HM-' }, { namePrefix: 'BT' }],
+            optionalServices: [HM10_SERVICE_UUID.toLowerCase()]
+        });
+        
+        bleDevice.addEventListener('gattserverdisconnected', () => {
+            statusDot.classList.remove('connected');
+            statusText.textContent = "Disconnected";
+            connectBtn.textContent = "Connect Cube (HM-10)";
+            bleCharacteristic = null;
+        });
+
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(HM10_SERVICE_UUID.toLowerCase());
+        bleCharacteristic = await service.getCharacteristic(HM10_CHAR_UUID.toLowerCase());
+        
+        statusDot.classList.add('connected');
+        statusText.textContent = "Connected";
+        connectBtn.textContent = "Disconnect";
+    } catch (err) {
+        console.error(err);
+        statusText.textContent = "Failed";
+        statusDot.classList.remove('connected');
+    }
+});
+
+btnAuto.addEventListener('click', () => {
+    btnAuto.classList.add('active');
+    btnManual.classList.remove('active');
+    sendTextCommand('A');
+});
+
+btnManual.addEventListener('click', () => {
+    btnManual.classList.add('active');
+    btnAuto.classList.remove('active');
+    sendTextCommand('M');
+});
+
+btnPrev.addEventListener('click', () => {
+    sendTextCommand('P');
+});
+
+btnNext.addEventListener('click', () => {
+    sendTextCommand('N');
+});
+
+btnClear.addEventListener('click', () => {
+    cubeData.fill(0);
+    updateGridUI();
+    streamFullFrame();
+});
+
+brightSlider.addEventListener('input', (e) => {
+    const val = e.target.value;
+    brightVal.textContent = val;
+    // Command Protocol: 'B' followed by the integer byte value
+    const buf = new Uint8Array([ 'B'.charCodeAt(0), parseInt(val) ]);
+    sendTxPacket(buf);
+});
+
+// Layer Navigation
+document.querySelectorAll('.layer-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentZ = parseInt(e.target.dataset.z);
+        updateGridUI();
+    });
+});
+
+// Build interface on window load
+buildGridUI();
+</script>
 </body>
 </html>
