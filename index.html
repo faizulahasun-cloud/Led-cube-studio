@@ -5,383 +5,359 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>8x8x8 LED Cube Studio Pro</title>
 <style>
-:root { 
-    --bg: #141414; 
-    --panel: #222222; 
-    --panel2: #1a1a1a; 
-    --line: #3a3a3a; 
-    --text: #f5f5f5; 
-    --muted: #aaaaaa; 
-    --accent: #00ff66; 
-    --accent-dim: #063d22; 
-    --danger: #ff4545; 
+:root {
+    --bg: #121212;
+    --panel: #1e1e1e;
+    --panel2: #252525;
+    --line: #333333;
+    --text: #e0e0e0;
+    --muted: #888888;
+    --accent: #00ff66;
+    --accent-dim: #0bb34c;
+    --danger: #ff3333;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    background: var(--bg); 
-    color: var(--text); 
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 h1 {
-    text-align: center;
+    font-weight: 400;
     margin-bottom: 20px;
-    font-size: 24px;
     letter-spacing: 1px;
-    color: var(--accent);
+    color: #ffffff;
 }
 .app-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-@media (max-width: 900px) {
-    .app-container { grid-template-columns: 1fr; }
-}
-.panel {
+    width: 100%;
+    max-width: 900px;
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
 }
-.connection-bar {
+.row {
     display: flex;
-    gap: 10px;
-    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
 }
-.status-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--danger);
-    display: inline-block;
-}
-.status-dot.connected {
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-}
-button {
+.card {
     background: var(--panel2);
-    color: var(--text);
     border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 15px;
+    flex: 1;
+    min-width: 250px;
+}
+.btn {
+    background: var(--line);
+    border: none;
+    color: var(--text);
     padding: 10px 16px;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
     transition: all 0.2s ease;
 }
-button:hover {
-    border-color: var(--accent);
-    background: var(--accent-dim);
+.btn:hover { background: #444; }
+.btn-connect { background: var(--accent-dim); color: #000; }
+.btn-connect:hover { background: var(--accent); }
+.btn-danger { background: #5a1818; color: #ff9999; }
+.btn-danger:hover { background: var(--danger); color: #000; }
+.btn-active {
+    background: var(--accent) !important;
+    color: #000 !important;
+    box-shadow: 0 0 8px var(--accent);
 }
-button.active {
-    background: var(--accent);
-    color: #000;
-    border-color: var(--accent);
-}
-.control-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-.layer-container {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-.layer-selector {
-    display: flex;
-    gap: 5px;
-    justify-content: space-between;
-    background: var(--panel2);
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid var(--line);
-}
-.layer-btn {
-    padding: 6px 10px;
-    font-size: 12px;
-}
-.grid-8x8 {
+.grid-container {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
-    gap: 4px;
-    background: var(--panel2);
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid var(--line);
-    aspect-ratio: 1;
+    gap: 6px;
+    margin-top: 15px;
+    max-width: 360px;
 }
 .voxel {
     aspect-ratio: 1;
-    background: #333;
-    border-radius: 3px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 4px;
     cursor: pointer;
     transition: background 0.1s;
 }
-.voxel.on {
+.voxel.active {
     background: var(--accent);
-    box-shadow: 0 0 6px var(--accent);
+    box-shadow: 0 0 8px var(--accent);
 }
 .slider-container {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-}
-.slider-container label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    color: var(--muted);
+    gap: 10px;
+    margin-top: 10px;
 }
 input[type="range"] {
     width: 100%;
     accent-color: var(--accent);
+}
+.nav-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+.tab {
+    padding: 6px 12px;
     background: var(--panel2);
     border: 1px solid var(--line);
-    height: 6px;
-    border-radius: 3px;
+    cursor: pointer;
+    border-radius: 4px 4px 0 0;
+}
+.tab.active {
+    background: var(--line);
+    border-bottom: 2px solid var(--accent);
 }
 </style>
 </head>
 <body>
+
 <h1>8x8x8 LED Cube Studio Pro</h1>
 
 <div class="app-container">
-    <!-- Left Configuration Panel -->
-    <div class="panel">
-        <h2>Hardware Connectivity</h2>
-        <div class="connection-bar">
-            <div id="statusDot" class="status-dot"></div>
-            <span id="statusText" style="color: var(--muted)">Disconnected</span>
-            <button id="connectBtn" style="margin-left: auto;">Connect Cube (HM-10)</button>
-        </div>
-        
-        <h2>Global Commands</h2>
-        <div class="control-grid">
-            <button id="btnAuto" class="active">Auto Mode (A)</button>
-            <button id="btnManual">Manual Mode (M)</button>
-            <button id="btnPrev">Previous Mode (P)</button>
-            <button id="btnNext">Next Mode (N)</button>
+    <div class="row">
+        <!-- Hardware Connection Panel Card -->
+        <div class="card">
+            <h3>Hardware Connection</h3>
+            <p style="margin: 10px 0; font-size:14px; color:var(--muted);">Pair your HM-10 BLE module here.</p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-connect" id="connectBtn">Connect Cube</button>
+                <button class="btn btn-danger" id="clearBtn">Clear Canvas</button>
+            </div>
+            <p id="statusLabel" style="margin-top:10px; font-size:14px; color:var(--danger);">Status: Disconnected</p>
         </div>
 
-        <div class="slider-container">
-            <label><span>Global Brightness (B)</span><span id="brightVal">8</span></label>
-            <input type="range" id="brightSlider" min="2" max="8" value="8">
-        </div>
-        
-        <button id="btnClear" style="border-color: var(--danger); color: var(--danger);">Clear Draw Canvas</button>
-    </div>
-
-    <!-- Right Live Grid Drawer Panel -->
-    <div class="panel">
-        <div class="layer-container">
-            <label style="font-weight: bold; color: var(--muted)">Active Drawer Layer (Z-Axis View)</label>
-            <div class="layer-selector">
-                <button class="layer-btn active" data-z="0">Z0</button>
-                <button class="layer-btn" data-z="1">Z1</button>
-                <button class="layer-btn" data-z="2">Z2</button>
-                <button class="layer-btn" data-z="3">Z3</button>
-                <button class="layer-btn" data-z="4">Z4</button>
-                <button class="layer-btn" data-z="5">Z5</button>
-                <button class="layer-btn" data-z="6">Z6</button>
-                <button class="layer-btn" data-z="7">Z7</button>
+        <!-- Mode & Manual Automation Input Control Card -->
+        <div class="card">
+            <h3>Cube Mode Controls</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px;">
+                <button class="btn btn-active" id="modeABtn">Auto Mode ('A')</button>
+                <button class="btn" id="modeMBtn">Manual Mode ('M')</button>
+                <button class="btn" id="nextBtn">Next Pattern ('N')</button>
+                <button class="btn" id="prevBtn">Prev Pattern ('P')</button>
+                <button class="btn" id="modeDBtn" style="grid-column: span 2;">Draw Mode ('D')</button>
+            </div>
+            <div class="slider-container">
+                <label style="font-size:14px;">Brightness Level ('B'): <span id="brightVal">8</span></label>
+                <input type="range" id="brightSlider" min="2" max="8" value="8">
             </div>
         </div>
-        
-        <div id="gridCanvas" class="grid-8x8"></div>
+    </div>
+
+    <!-- 2D Slice Layer Editor Interface Panel Card -->
+    <div class="card">
+        <h3>2D Layer Matrix Editor</h3>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:10px;">Select a Z-Layer depth view to map individual voxels.</p>
+        <div class="nav-tabs" id="layerTabs"></div>
+        <div class="grid-container" id="voxelGrid"></div>
     </div>
 </div>
 
 <script>
-// --- HM-10 Factory Default Constants ---
+// Default identifiers for communication mapping layer
 const HM10_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
 const HM10_CHAR_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
 
 let bleDevice = null;
 let bleCharacteristic = null;
-let bleWriteChain = Promise.resolve();
+let currentZLayer = 0;
+let currentAppMode = 'A'; // Tracks current UI state: 'A', 'M', or 'D'
 
-// --- Local State Memory Buffer (64 Bytes matching packed structure) ---
-let cubeData = new Uint8Array(64);
-let currentZ = 0;
+// Internal packed 64-byte row structure array configuration tracking canvas states
+let cubeMatrixData = new Uint8Array(64);
 
-// --- Initialize Interactive DOM Objects ---
-const connectBtn = document.getElementById('connectBtn');
-const statusDot = document.getElementById('statusDot');
-const statusText = document.getElementById('statusText');
-const gridCanvas = document.getElementById('gridCanvas');
-const brightSlider = document.getElementById('brightSlider');
-const brightVal = document.getElementById('brightVal');
+const gridContainer = document.getElementById('voxelGrid');
+const tabsContainer = document.getElementById('layerTabs');
+const statusLabel = document.getElementById('statusLabel');
 
-const btnAuto = document.getElementById('btnAuto');
-const btnManual = document.getElementById('btnManual');
-const btnPrev = document.getElementById('btnPrev');
-const btnNext = document.getElementById('btnNext');
-const btnClear = document.getElementById('btnClear');
-
-// Generate 8x8 Grid Squares
-function buildGridUI() {
-    gridCanvas.innerHTML = '';
-    for(let y=0; y<8; y++) {
-        for(let x=0; x<8; x++) {
-            const el = document.createElement('div');
-            el.className = 'voxel';
-            el.dataset.x = x;
-            el.dataset.y = y;
-            el.addEventListener('click', onVoxelClick);
-            gridCanvas.appendChild(el);
-        }
-    }
-    updateGridUI();
+// Generate structural tab selection buttons
+for (let z = 0; z < 8; z++) {
+    const tab = document.createElement('div');
+    tab.className = `tab ${z === 0 ? 'active' : ''}`;
+    tab.innerText = `Z-Layer ${z}`;
+    tab.onclick = () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentZLayer = z;
+        renderActiveGridLayer();
+    };
+    tabsContainer.appendChild(tab);
 }
 
-function updateGridUI() {
-    const voxels = gridCanvas.querySelectorAll('.voxel');
-    voxels.forEach(el => {
-        const x = parseInt(el.dataset.x);
-        const y = parseInt(el.dataset.y);
-        const byteIndex = (currentZ * 8) + y;
-        const bitState = (cubeData[byteIndex] & (1 << x)) !== 0;
-        if(bitState) {
-            el.classList.add('on');
-        } else {
-            el.classList.remove('on');
+// Generate interaction canvas voxels matching matrix row flags
+function renderActiveGridLayer() {
+    gridContainer.innerHTML = '';
+    for (let y = 0; y < 8; y++) {
+        for (let x = 0; x < 8; x++) {
+            const voxel = document.createElement('div');
+            voxel.className = 'voxel';
+            
+            let byteIndex = currentZLayer * 8 + y;
+            let isVoxelActive = (cubeMatrixData[byteIndex] & (1 << x)) !== 0;
+            
+            if (isVoxelActive) voxel.classList.add('active');
+            
+            voxel.onclick = () => {
+                // If user clicks a voxel on the grid, automatically jump UI to Draw Mode highlight
+                if (currentAppMode !== 'D') {
+                    highlightModeButton('D');
+                }
+                
+                if (isVoxelActive) {
+                    cubeMatrixData[byteIndex] &= ~(1 << x);
+                    voxel.classList.remove('active');
+                } else {
+                    cubeMatrixData[byteIndex] |= (1 << x);
+                    voxel.classList.add('active');
+                }
+                isVoxelActive = !isVoxelActive;
+                streamFullMatrixFrame(); 
+            };
+            gridContainer.appendChild(voxel);
+        }
+    }
+}
+
+// --- SAFE MTU SEGMENTATION WRITE LOOP ---
+let transmitQueue = Promise.resolve();
+
+function transmitRawPayload(buffer) {
+    const payload = new Uint8Array(buffer);
+    transmitQueue = transmitQueue.then(async () => {
+        if (!bleCharacteristic) return;
+
+        try {
+            const CHUNK_SIZE = 16;
+            for (let i = 0; i < payload.byteLength; i += CHUNK_SIZE) {
+                const chunk = payload.slice(i, i + CHUNK_SIZE);
+                await bleCharacteristic.writeValue(chunk);
+                await new Promise(resolve => setTimeout(resolve, 20));
+            }
+        } catch (err) {
+            console.error("Transmission chunk segment dropped: ", err);
         }
     });
+
+    return transmitQueue;
 }
 
-function onVoxelClick(e) {
-    const x = parseInt(e.target.dataset.x);
-    const y = parseInt(e.target.dataset.y);
-    const byteIndex = (currentZ * 8) + y;
+// Packages the standard 66-byte framing packet structure
+function streamFullMatrixFrame() {
+    let packet = new Uint8Array(66);
+    packet[0] = 83; // ASCII 'S' header literal byte
     
-    // Toggle targeted matrix bit
-    cubeData[byteIndex] ^= (1 << x);
-    updateGridUI();
-    
-    // Auto-transmit the changed matrix state to Arduino Uno
-    streamFullFrame();
-}
-
-// --- Send Serial Commands over BLE ---
-function sendTxPacket(buffer) {
-    if (!bleCharacteristic) return;
-    bleWriteChain = bleWriteChain.then(() => 
-        bleCharacteristic.writeValueWithoutResponse(buffer)
-    ).catch(err => console.log('Packet transmission dropped:', err));
-}
-
-function sendTextCommand(charStr) {
-    const buf = new TextEncoder().encode(charStr);
-    sendTxPacket(buf);
-}
-
-function streamFullFrame() {
-    // Exact structural format expected by your Arduino: 'S' + 64 data bytes + Checksum
-    const packet = new Uint8Array(66);
-    packet[0] = 'S'.charCodeAt(0);
-    
-    let checksum = 0;
-    for(let i=0; i<64; i++) {
-        packet[i+1] = cubeData[i];
-        checksum ^= cubeData[i];
+    let runningChecksum = 0;
+    for (let i = 0; i < 64; i++) {
+        packet[i + 1] = cubeMatrixData[i];
+        runningChecksum ^= cubeMatrixData[i];
     }
-    packet[65] = checksum;
-    
-    // HM-10 max safe packet payload is typically 20 bytes. Split into 4 safe chunks.
-    const chunkSize = 16;
-    for (let offset = 0; offset < packet.length; offset += chunkSize) {
-        const chunk = packet.slice(offset, offset + chunkSize);
-        sendTxPacket(chunk);
-    }
+    packet[65] = runningChecksum;
+    transmitRawPayload(packet.buffer);
 }
 
-// --- Event UI Listeners ---
-connectBtn.addEventListener('click', async () => {
-    if (bleDevice && bleDevice.gatt.connected) {
-        bleDevice.gatt.disconnect();
-        return;
-    }
+// Sends isolated standalone command character pulses
+function sendSingleCommandChar(char) {
+    let buffer = new Uint8Array([char.charCodeAt(0)]);
+    transmitRawPayload(buffer.buffer);
+}
+
+// Utility to handle button visual highlights
+function highlightModeButton(mode) {
+    currentAppMode = mode;
+    document.getElementById('modeABtn').classList.remove('btn-active');
+    document.getElementById('modeMBtn').classList.remove('btn-active');
+    document.getElementById('modeDBtn').classList.remove('btn-active');
+    
+    if (mode === 'A') document.getElementById('modeABtn').classList.add('btn-active');
+    if (mode === 'M') document.getElementById('modeMBtn').classList.add('btn-active');
+    if (mode === 'D') document.getElementById('modeDBtn').classList.add('btn-active');
+}
+
+// --- CORE INTERFACE ATTACHMENTS ---
+document.getElementById('connectBtn').onclick = async () => {
     try {
-        statusText.textContent = "Searching...";
+        statusLabel.innerText = "Status: Scanning Devices...";
         bleDevice = await navigator.bluetooth.requestDevice({
-            filters: [{ services: [HM10_SERVICE_UUID.toLowerCase()] }, { namePrefix: 'HM-' }, { namePrefix: 'BT' }],
-            optionalServices: [HM10_SERVICE_UUID.toLowerCase()]
+            filters: [{ services: [HM10_SERVICE_UUID] }]
         });
         
-        bleDevice.addEventListener('gattserverdisconnected', () => {
-            statusDot.classList.remove('connected');
-            statusText.textContent = "Disconnected";
-            connectBtn.textContent = "Connect Cube (HM-10)";
-            bleCharacteristic = null;
-        });
-
+        statusLabel.innerText = "Status: Connecting Pins...";
         const server = await bleDevice.gatt.connect();
-        const service = await server.getPrimaryService(HM10_SERVICE_UUID.toLowerCase());
-        bleCharacteristic = await service.getCharacteristic(HM10_CHAR_UUID.toLowerCase());
+        const service = await server.getPrimaryService(HM10_SERVICE_UUID);
+        bleCharacteristic = await service.getCharacteristic(HM10_CHAR_UUID);
         
-        statusDot.classList.add('connected');
-        statusText.textContent = "Connected";
-        connectBtn.textContent = "Disconnect";
-    } catch (err) {
-        console.error(err);
-        statusText.textContent = "Failed";
-        statusDot.classList.remove('connected');
+        statusLabel.innerText = "Status: Connected Perfectly";
+        statusLabel.style.color = "var(--accent)";
+        
+        // Synchronize current mode immediately upon connection
+        sendSingleCommandChar(currentAppMode);
+    } catch (error) {
+        statusLabel.innerText = "Status: Pairing Failed";
+        statusLabel.style.color = "var(--danger)";
+        console.error(error);
     }
-});
+};
 
-btnAuto.addEventListener('click', () => {
-    btnAuto.classList.add('active');
-    btnManual.classList.remove('active');
-    sendTextCommand('A');
-});
+document.getElementById('clearBtn').onclick = () => {
+    cubeMatrixData.fill(0);
+    renderActiveGridLayer();
+    if (currentAppMode === 'D') {
+        streamFullMatrixFrame();
+    }
+};
 
-btnManual.addEventListener('click', () => {
-    btnManual.classList.add('active');
-    btnAuto.classList.remove('active');
-    sendTextCommand('M');
-});
+// Clean command triggers
+document.getElementById('modeABtn').onclick = () => {
+    highlightModeButton('A');
+    sendSingleCommandChar('A');
+};
 
-btnPrev.addEventListener('click', () => {
-    sendTextCommand('P');
-});
+document.getElementById('modeMBtn').onclick = () => {
+    highlightModeButton('M');
+    sendSingleCommandChar('M');
+};
 
-btnNext.addEventListener('click', () => {
-    sendTextCommand('N');
-});
+document.getElementById('modeDBtn').onclick = () => {
+    highlightModeButton('D');
+    sendSingleCommandChar('D');
+};
 
-btnClear.addEventListener('click', () => {
-    cubeData.fill(0);
-    updateGridUI();
-    streamFullFrame();
-});
+document.getElementById('nextBtn').onclick = () => {
+    // Only pass 'N' in manual mode.
+    if (currentAppMode === 'M') {
+        sendSingleCommandChar('N');
+    }
+};
 
-brightSlider.addEventListener('input', (e) => {
-    const val = e.target.value;
-    brightVal.textContent = val;
-    // Command Protocol: 'B' followed by the integer byte value
-    const buf = new Uint8Array([ 'B'.charCodeAt(0), parseInt(val) ]);
-    sendTxPacket(buf);
-});
+document.getElementById('prevBtn').onclick = () => {
+    // Only pass 'P' in manual mode.
+    if (currentAppMode === 'M') {
+        sendSingleCommandChar('P');
+    }
+};
 
-// Layer Navigation
-document.querySelectorAll('.layer-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        currentZ = parseInt(e.target.dataset.z);
-        updateGridUI();
-    });
-});
+document.getElementById('brightSlider').oninput = (event) => {
+    const value = parseInt(event.target.value, 10);
+    document.getElementById('brightVal').innerText = value;
+    if (!bleCharacteristic) return;
 
-// Build interface on window load
-buildGridUI();
-</script>
-</body>
-</html>
+    // ASCII 'B' header followed by the raw brightness value.
+    const packet = new Uint8Array([66, value]);
+    transmitRawPayload(packet.buffer);
+};
+
+// Initial canvas deployment
+renderActiveGridLayer();
