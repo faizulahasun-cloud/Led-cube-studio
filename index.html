@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>8x8x8 LED Cube Console - Operational Workspace</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #E0E0E0; padding: 30px; margin: 0; }
+        .dashboard-container { max-width: 600px; margin: 40px auto; background: #1E1E1E; border: 1px solid #2D2D2D; border-radius: 12px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        h2 { margin-top: 0; color: #FFFFFF; font-weight: 600; border-bottom: 1px solid #2D2D2D; padding-bottom: 12px; }
+        .status-box { background: #262626; padding: 12px 18px; border-radius: 6px; font-weight: bold; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        .status-disconnected { color: #FF5252; }
+        .status-connected { color: #00E676; }
+        .control-grid { display: flex; flex-direction: column; gap: 20px; }
+        .btn { width: 100%; background: #2979FF; color: #FFFFFF; border: none; padding: 14px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s, transform 0.1s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn:hover { background: #2962FF; }
+        .btn:active { transform: scale(0.98); }
+        .btn-disconnect { background: #333333; border: 1px solid #444; }
+        .btn-disconnect:hover { background: #D50000; border-color: #D50000; }
+        .btn-action { background: #00E676; color: #121212; }
+        .btn-action:hover { background: #00C853; }
+        .btn-step { background: #FFD600; color: #121212; }
+        .btn-step:hover { background: #FFC400; }
+        .slider-block { background: #262626; border: 1px solid #333; padding: 15px 18px; border-radius: 6px; margin-top: 5px; }
+        .slider-labels { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+        input[type=range] { width: 100%; margin: 0; background: #444; height: 6px; border-radius: 3px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <h2>8x8x8 LED CUBE CONTROLLER</h2>
+    
+    <div class="status-box">
+        <span>INTERFACE STATUS:</span>
+        <span id="connectionLog" class="status-disconnected">DISCONNECTED</span>
+    </div>
+
+    <div class="control-grid">
+        <button id="connectBtn" class="btn" onclick="triggerBLELinkSession()">Pair HM-10 BLE Module</button>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px;">
+            <button class="btn btn-action" onclick="transmitModeToken('A')">Auto Mode ('A')</button>
+            <button class="btn btn-action" onclick="transmitModeToken('M')">Manual Mode ('M')</button>
+        </div>
+
+        <button class="btn btn-step" onclick="transmitModeToken('N')">Next Pattern Step ('N')</button>
+
+        <div class="slider-block">
+            <div class="slider-labels">
+                <span>CUBE BRIGHTNESS LEVEL CONTROL:</span>
+                <span id="sliderValLabel">5</span>
+            </div>
+            <input type="range" id="brightnessInputSlider" min="2" max="8" value="5" step="1" oninput="executeBrightnessShift(this.value)">
+        </div>
+
+        <button id="disconnectBtn" class="btn btn-disconnect" onclick="terminateConnectionSequence()" style="display:none; margin-top: 10px;">Disconnect Session</button>
+    </div>
+</div>
+
+<script>
+    const HM10_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    const HM10_CHAR_UUID    = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+    let physicalTargetDevice = null;
+    let targetDataCharacteristic = null;
+
+    async function triggerBLELinkSession() {
+        const statusDisplay = document.getElementById('connectionLog');
+        const actionButton = document.getElementById('connectBtn');
+        const abortButton = document.getElementById('disconnectBtn');
+
+        try {
+            statusDisplay.innerText = "SEARCHING...";
+            statusDisplay.className = "status-disconnected";
+
+            physicalTargetDevice = await navigator.bluetooth.requestDevice({
+                filters: [{ services: [HM10_SERVICE_UUID] }]
+            });
+
+            const targetGattServer = await physicalTargetDevice.gatt.connect();
+            const targetService = await targetGattServer.getPrimaryService(HM10_SERVICE_UUID);
+            targetDataCharacteristic = await targetService.getCharacteristic(HM10_CHAR_UUID);
+
+            statusDisplay.innerText = "CONNECTED";
+            statusDisplay.className = "status-connected";
+            actionButton.style.display = "none";
+            abortButton.style.display = "block";
+
+            physicalTargetDevice.addEventListener('gattserverdisconnected', cleanSessionStateWipe);
+        } catch(error) {
+            statusDisplay.innerText = "DISCONNECTED";
+            statusDisplay.className = "status-disconnected";
+            console.error("GATT Handshake Fault: ", error);
+            alert("Connection Cancelled or Failed: " + error.message);
+        }
+    }
+
+    async function transmitModeToken(tokenChar) {
+        if (!targetDataCharacteristic) return;
+        const vectorBuffer = new TextEncoder().encode(tokenChar);
+        try {
+            await targetDataCharacteristic.writeValueWithoutResponse(vectorBuffer);
+        } catch(error) {
+            console.error("Vector Delivery Fault: ", error);
+        }
+    }
+
+    async function executeBrightnessShift(selectedLevel) {
+        document.getElementById('sliderValLabel').innerText = selectedLevel;
+        if (!targetDataCharacteristic) return;
+        
+        const dataPayload = new Uint8Array(2);
+        dataPayload[0] = 66; // 'B'
+        dataPayload[1] = parseInt(selectedLevel);
+
+        try {
+            await targetDataCharacteristic.writeValueWithoutResponse(dataPayload);
+        } catch(error) {
+            console.error("Brightness Adjustment Fault: ", error);
+        }
+    }
+
+    async function terminateConnectionSequence() {
+        if (!physicalTargetDevice) return;
+        if (physicalTargetDevice.gatt.connected) {
+            try {
+                const exitTokenVector = new TextEncoder().encode('Q');
+                await targetDataCharacteristic.writeValueWithoutResponse(exitTokenVector);
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch(e) { console.warn("Pre-teardown token delivery skipped: ", e); }
+            await physicalTargetDevice.gatt.disconnect();
+        }
+    }
+
+    function cleanSessionStateWipe() {
+        document.getElementById('connectionLog').innerText = "DISCONNECTED";
+        document.getElementById('connectionLog').className = "status-disconnected";
+        document.getElementById('connectBtn').style.display = "block";
+        document.getElementById('disconnectBtn').style.display = "none";
+        targetDataCharacteristic = null;
+        physicalTargetDevice = null;
+    }
+</script>
+
+</body>
+</html>
