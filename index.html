@@ -311,7 +311,7 @@ function streamFullMatrixFrame() {
 // Sends isolated standalone command character pulses
 function sendSingleCommandChar(char) {
     let buffer = new Uint8Array([char.charCodeAt(0)]);
-    transmitRawPayload(buffer);
+    return transmitRawPayload(buffer);
 }
 
 // Utility to handle button visual highlights
@@ -374,7 +374,7 @@ connectBtn.onclick = async () => {
         connectBtn.innerText = 'Disconnect';
 
         // Select the web app's default mode after the Bluetooth connection is ready.
-        sendSingleCommandChar('A');
+        await sendSingleCommandChar('A');
 
         bleDevice.addEventListener('gattserverdisconnected', () => {
             updateStatus('Status: Disconnected', 'var(--danger)');
